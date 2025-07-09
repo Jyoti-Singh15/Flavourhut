@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import BackButton from '../components/BackButton';
+import { recipeAPI, adminAPI } from '../services/api';
 
 const AdminPage = () => {
   const [recipes, setRecipes] = useState([]);
@@ -29,10 +30,8 @@ const AdminPage = () => {
     try {
       setLoading(true);
       const [recipesRes, usersRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/recipes'),
-        axios.get('http://localhost:5000/api/admin/users', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        })
+        recipeAPI.getAll(),
+        adminAPI.getUsers()
       ]);
 
       // Create a map of user IDs to user names for author lookup
@@ -81,9 +80,7 @@ const AdminPage = () => {
   const handleDeleteRecipe = async (recipeId) => {
     if (window.confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
       try {
-        await axios.delete(`http://localhost:5000/api/recipes/${recipeId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
+        await recipeAPI.delete(recipeId);
         setRecipes(recipes.filter(recipe => recipe._id !== recipeId));
         setStats(prev => ({ ...prev, totalRecipes: prev.totalRecipes - 1 }));
       } catch (err) {
@@ -96,9 +93,7 @@ const AdminPage = () => {
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user? This will also delete all their recipes.')) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
+        await adminAPI.deleteUser(userId);
         setUsers(users.filter(user => user._id !== userId));
         setRecipes(recipes.filter(recipe => recipe.author !== userId));
         setStats(prev => ({ ...prev, totalUsers: prev.totalUsers - 1 }));
@@ -111,10 +106,7 @@ const AdminPage = () => {
 
   const handleToggleUserStatus = async (userId, currentStatus) => {
     try {
-      await axios.patch(`http://localhost:5000/api/admin/users/${userId}/status`, 
-        { isActive: !currentStatus },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-      );
+      await adminAPI.toggleUserStatus(userId);
       setUsers(users.map(user => 
         user._id === userId ? { ...user, isActive: !currentStatus } : user
       ));
