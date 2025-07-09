@@ -1,0 +1,33 @@
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* You can add global custom CSS variables here if needed,
+   though Tailwind's config is preferred for colors/fonts */
+body {
+  font-family: 'Open Sans', sans-serif; /* Fallback */
+  color: #555555; /* Default body text color */
+  background-color: #FBFBFB; /* Default background */
+}
+
+/* Base styles for buttons, links, etc. can be configured here or with @apply in components */
+.btn {
+  @apply px-6 py-3 rounded-full font-bold transition duration-300 ease-in-out;
+}
+
+.btn-primary {
+  @apply bg-primary-accent text-white hover:bg-opacity-90;
+}
+
+.btn-secondary {
+  @apply border border-primary-accent text-primary-accent hover:bg-primary-accent hover:text-white;
+}
+
+.section-padding {
+  @apply py-16 px-4 md:px-8 lg:px-16; /* Responsive padding */
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4; /* Centralized content container */
+}
