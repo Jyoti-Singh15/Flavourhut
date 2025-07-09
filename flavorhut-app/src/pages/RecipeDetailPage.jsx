@@ -1,63 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import StarRating from '../components/StarRating';
-import LikeButton from '../components/LikeButton';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import RecipeCard from '../components/RecipeCard';
 import axios from 'axios';
 import BackButton from '../components/BackButton';
+import { recipeAPI, imageAPI, authAPI } from '../services/api';
 
-function RecipeDetailPage() {
-  const { id } = useParams();
+const UserProfilePage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [recipe, setRecipe] = useState(null);
+  const { user, updateUser } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [userRecipes, setUserRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [userRating, setUserRating] = useState(0);
-  const [ratingLoading, setRatingLoading] = useState(false);
-  const [noChangesMessage, setNoChangesMessage] = useState('');
+  const [message, setMessage] = useState('');
+  const [formData, setFormData] = useState({
+    username: user?.username || '',
+    email: user?.email || '',
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    bio: user?.bio || '',
+    profilePictureUrl: user?.profilePictureUrl || ''
+  });
+  const [imagePreview, setImagePreview] = useState(user?.profilePictureUrl || '');
 
   useEffect(() => {
-    const fetchRecipe = async () => {
-      try {
-    setLoading(true);
-        const response = await axios.get(`http://localhost:5000/api/recipes/${id}`);
-        setRecipe(response.data);
-        setFormData({
-          title: response.data.title,
-          description: response.data.description,
-          prepTime: response.data.prepTime,
-          cookTime: response.data.cookTime,
-          servings: response.data.servings,
-          difficulty: response.data.difficulty,
-          mealType: response.data.mealType,
-          cuisine: response.data.cuisine,
-          dishType: response.data.dishType,
-          occasion: response.data.occasion,
-          ingredients: response.data.ingredients.map(ing => ing.item).join('\n'),
-          instructions: response.data.instructions.map(inst => inst.step).join('\n'),
-          notes: response.data.notes || '',
-          image: response.data.image
-        });
-        setError('');
-      } catch (err) {
-        console.error('Error fetching recipe:', err);
-        setError('Failed to load recipe. Please try again.');
-      } finally {
+    if (user) {
+      fetchUserRecipes();
+      setFormData({
+        username: user.username || '',
+        email: user.email || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        bio: user.bio || '',
+        profilePictureUrl: user.profilePictureUrl || ''
+      });
+      setImagePreview(user.profilePictureUrl || '');
+    }
+  }, [user]);
+
+  const fetchUserRecipes = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await recipeAPI.getByUser(user._id);
+      setUserRecipes(response.data);
+    } catch (err) {
+      console.error('Error fetching user recipes:', err);
+      setError('Failed to load your recipes');
+    } finally {
       setLoading(false);
-      }
-    };
-
-    fetchRecipe();
-  }, [id]);
-
-  const handleGoBack = () => {
-    navigate(-1);
+    }
   };
 
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -65,191 +61,67 @@ function RecipeDetailPage() {
     }));
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      try {
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('image', file);
 
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    // Reset form data to original recipe
-    setFormData({
-      title: recipe.title,
-      description: recipe.description,
-      prepTime: recipe.prepTime,
-      cookTime: recipe.cookTime,
-      servings: recipe.servings,
-      difficulty: recipe.difficulty,
-      mealType: recipe.mealType,
-      cuisine: recipe.cuisine,
-      dishType: recipe.dishType,
-      occasion: recipe.occasion,
-      ingredients: recipe.ingredients.map(ing => ing.item).join('\n'),
-      instructions: recipe.instructions.map(inst => inst.step).join('\n'),
-      notes: recipe.notes || '',
-      image: recipe.image
-    });
-  };
+        const token = localStorage.getItem('token');
+        const response = await imageAPI.uploadProfile(formData);
 
-  const handleSave = async () => {
-    setNoChangesMessage('');
-    // Compare formData with original recipe
-    if (recipe) {
-      const original = {
-        title: recipe.title,
-        description: recipe.description,
-        prepTime: recipe.prepTime,
-        cookTime: recipe.cookTime,
-        servings: recipe.servings,
-        difficulty: recipe.difficulty,
-        mealType: recipe.mealType,
-        cuisine: recipe.cuisine,
-        dishType: recipe.dishType,
-        occasion: recipe.occasion,
-        ingredients: recipe.ingredients.map(ing => ing.item).join('\n'),
-        instructions: recipe.instructions.map(inst => inst.step).join('\n'),
-        notes: recipe.notes || '',
-        image: recipe.image
-      };
-      let changed = false;
-      for (const key in original) {
-        if (formData[key] !== original[key]) {
-          changed = true;
-          break;
-        }
-      }
-      if (!changed) {
-        setNoChangesMessage('You made no changes.');
-        return;
+        const image = response.data.image;
+        setImagePreview(image);
+        setFormData(prev => ({
+          ...prev,
+          profilePictureUrl: image
+        }));
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        setError('Failed to upload image. Please try again.');
       }
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setMessage('');
+
     try {
-      setLoading(true);
       const token = localStorage.getItem('token');
-      
-      // Convert ingredients and instructions to the correct format
-      const recipeData = {
-        ...formData,
-        ingredients: formData.ingredients.split('\n')
-          .filter(item => item.trim())
-          .map(item => ({ item: item.trim() })),
-        instructions: formData.instructions.split('\n')
-          .filter(step => step.trim())
-          .map((step, index) => ({ step: step.trim() }))
-      };
+      const response = await authAPI.updateProfile(formData);
 
-      const response = await axios.put(`http://localhost:5000/api/recipes/${id}`, recipeData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      setRecipe(response.data);
+      console.log('Profile update response:', response.data);
+      updateUser(response.data);
+      setMessage('Profile updated successfully!');
       setIsEditing(false);
-      setError('');
     } catch (err) {
-      console.error('Error updating recipe:', err);
-      setError(err.response?.data?.message || 'Failed to update recipe');
+      console.error('Error updating profile:', err);
+      console.error('Error response:', err.response);
+      setError(err.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/recipes/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      navigate('/recipes');
-    } catch (err) {
-      console.error('Error deleting recipe:', err);
-      setError(err.response?.data?.message || 'Failed to delete recipe');
-      setLoading(false);
-    }
+  const handleGoBack = () => {
+    navigate(-1);
   };
 
-  const handleRateRecipe = async (rating) => {
-    try {
-      setRatingLoading(true);
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        setError('Please log in to rate recipes');
-        return;
-      }
-
-      const response = await axios.post(`http://localhost:5000/api/recipes/${id}/rate`, 
-        { rating },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      setRecipe(response.data);
-      setUserRating(rating);
-      setError('');
-    } catch (err) {
-      console.error('Error rating recipe:', err);
-      setError(err.response?.data?.message || 'Failed to rate recipe');
-    } finally {
-      setRatingLoading(false);
-    }
+  const handleAddRecipe = () => {
+    navigate('/add-recipe');
   };
 
-  const isOwner = user && recipe && user._id === recipe.userId._id;
-
-  if (loading) {
+  if (!user) {
     return (
-      <div className="container mx-auto px-4 py-8 flex-grow flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-accent mx-auto mb-4"></div>
-          <p>Loading recipe...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8 flex-grow flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Error</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={handleGoBack}
-            className="bg-primary-accent hover:bg-primary-accent/90 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!recipe) {
-    return (
-      <div className="container mx-auto px-4 py-8 flex-grow flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Recipe not found</h2>
-          <p className="text-gray-600 mb-4">The recipe you're looking for doesn't exist.</p>
-          <button
-            onClick={handleGoBack}
-            className="bg-primary-accent hover:bg-primary-accent/90 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-          >
-            Go Back
-          </button>
+          <p>Loading profile...</p>
         </div>
       </div>
     );
@@ -258,477 +130,262 @@ function RecipeDetailPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <BackButton className="mb-6" />
-      <div className="max-w-4xl mx-auto">
-        {/* Header with back button and action buttons */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center">
-            <button
-              onClick={handleGoBack}
-              className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <div>
-              <div className="text-sm text-gray-500 mb-2">Home &gt; Recipes &gt; {recipe.title}</div>
-              <h1 className="text-4xl font-bold text-gray-800 mb-4">{recipe.title}</h1>
-              <div className="flex items-center gap-4 text-gray-600">
-                <span>By {recipe.userId?.username || 'Unknown Chef'}</span>
-                <span>•</span>
-                <StarRating rating={recipe.averageRating || 0} />
-                <span>({recipe.ratingsCount || 0})</span>
-              </div>
-            </div>
+      {/* Banner Section with Background */}
+      <div 
+        className="relative bg-cover bg-center bg-no-repeat mb-8 overflow-hidden rounded-3xl mx-4"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/blog-banner.webp')`,
+          minHeight: '400px'
+        }}
+      >
+        <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+        <div className="relative z-10 flex items-center justify-center min-h-[400px] px-4">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-white mb-4">My Profile</h1>
+            <p className="text-lg text-white">
+              Manage your profile and view your culinary creations
+            </p>
           </div>
-          
-          {/* Action Buttons */}
-          {isOwner && (
-            <div className="flex gap-2">
-              {!isEditing ? (
-                <>
+        </div>
+      </div>
+
+      {/* Header with back button */}
+      <div className="flex items-center mb-8">
+        <button
+          onClick={handleGoBack}
+          className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h2 className="text-2xl font-bold text-gray-800">Profile Information</h2>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+          {error}
+        </div>
+      )}
+
+      {message && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+          {message}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Profile Information */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="text-center mb-6">
+              <div className="relative inline-block">
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Profile"
+                    className="w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-gray-200"
+                  />
+                ) : (
+                  <div className="w-24 h-24 bg-primary-accent rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-3xl text-white font-bold">
+                      {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                    </span>
+                  </div>
+                )}
+                {isEditing && (
+                  <label className="absolute bottom-0 right-0 bg-primary-accent text-white p-1 rounded-full cursor-pointer hover:bg-primary-accent/90 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+              <h2 className="text-xl font-semibold text-gray-800">
+                {user.firstName && user.lastName 
+                  ? `${user.firstName} ${user.lastName}` 
+                  : user.username
+                }
+              </h2>
+              <p className="text-gray-600">{user.email}</p>
+              {user.role === 'admin' && (
+                <span className="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full mt-2">
+                  Admin
+                </span>
+              )}
+            </div>
+
+            {!isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                  <p className="text-gray-900">{user.username}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <p className="text-gray-900">{user.email}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                  <p className="text-gray-900">{user.bio || 'No bio added yet'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Member Since</label>
+                  <p className="text-gray-900">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="w-full bg-primary-accent hover:bg-primary-accent/90 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+                >
+                  Edit Profile
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent"
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    rows="3"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent"
+                  />
+                </div>
+
+                <div className="flex gap-2">
                   <button
-                    onClick={handleEdit}
-                    className="bg-primary-accent hover:bg-primary-accent/90 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                  >
-                    Edit Recipe
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                  >
-                    Delete Recipe
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={handleSave}
+                    type="submit"
                     disabled={loading}
-                    className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+                    className="flex-1 bg-primary-accent hover:bg-primary-accent/90 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
                   >
                     {loading ? 'Saving...' : 'Save Changes'}
                   </button>
                   <button
-                    onClick={handleCancelEdit}
-                    className="border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                    type="button"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setImagePreview(user.profilePictureUrl || '');
+                      setFormData({
+                        username: user.username || '',
+                        email: user.email || '',
+                        firstName: user.firstName || '',
+                        lastName: user.lastName || '',
+                        bio: user.bio || '',
+                        profilePictureUrl: user.profilePictureUrl || ''
+                      });
+                    }}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                   >
                     Cancel
                   </button>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recipe Image */}
-          <div className="lg:col-span-1">
-            <div className="relative">
-              <img 
-                src={recipe.image} 
-                alt={recipe.title}
-                className="w-full h-64 lg:h-96 object-cover rounded-lg shadow-md"
-              />
-              <LikeButton 
-                recipeId={recipe._id} 
-                initialLikes={recipe.likes || 0}
-                onLikeChange={(likes, isLiked) => {
-                  // Update the recipe object
-                  setRecipe(prev => ({ ...prev, likes }));
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Recipe Info */}
-          <div className="lg:col-span-2">
-            {!isEditing ? (
-              // Display Mode
-              <>
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                  <h2 className="text-2xl font-semibold mb-4">Recipe Information</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary-accent">{recipe.prepTime}</div>
-                      <div className="text-sm text-gray-600">Prep Time</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary-accent">{recipe.cookTime}</div>
-                      <div className="text-sm text-gray-600">Cook Time</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary-accent">{recipe.servings}</div>
-                      <div className="text-sm text-gray-600">Servings</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary-accent">{recipe.difficulty}</div>
-                      <div className="text-sm text-gray-600">Difficulty</div>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                      {recipe.mealType}
-                    </span>
-                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                      {recipe.cuisine}
-                    </span>
-                    <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
-                      {recipe.dishType}
-                    </span>
-                    <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
-                      {recipe.occasion}
-                    </span>
-                  </div>
                 </div>
-
-                {/* Description */}
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                  <h2 className="text-2xl font-semibold mb-4">Description</h2>
-                  <p className="text-gray-700 leading-relaxed">{recipe.description}</p>
-                </div>
-
-                {/* Rating Section */}
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                  <h2 className="text-2xl font-semibold mb-4">Rate This Recipe</h2>
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2">
-                      <StarRating rating={recipe.averageRating || 0} size="lg" />
-                      <span className="text-lg font-semibold text-gray-800">
-                        {recipe.averageRating ? recipe.averageRating.toFixed(1) : '0.0'}
-                      </span>
-                      <span className="text-gray-600">
-                        ({recipe.ratingsCount || 0} ratings)
-                      </span>
-                    </div>
-                    
-                    {!isOwner && user && (
-                      <div className="flex items-center gap-4">
-                        <span className="text-gray-700">Your rating:</span>
-                        <StarRating 
-                          rating={userRating} 
-                          onRate={handleRateRecipe}
-                          maxStars={5}
-                          size="lg"
-                        />
-                        {ratingLoading && (
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-accent"></div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {isOwner && (
-                      <div className="text-gray-600 italic">
-                        You can't rate your own recipe
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Ingredients */}
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                  <h2 className="text-2xl font-semibold mb-4">Ingredients</h2>
-                  <ul className="space-y-2">
-                    {recipe.ingredients.map((ingredient, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="text-primary-accent mr-2">•</span>
-                        <span>{ingredient.item}</span>
-                      </li>
-              ))}
-            </ul>
-          </div>
-
-                {/* Instructions */}
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                  <h2 className="text-2xl font-semibold mb-4">Instructions</h2>
-                  <ol className="space-y-4">
-                    {recipe.instructions.map((instruction, index) => (
-                      <li key={index} className="flex">
-                        <span className="bg-primary-accent text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 flex-shrink-0">
-                          {index + 1}
-                        </span>
-                        <span className="leading-relaxed">{instruction.step}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-                {/* Notes */}
-                {recipe.notes && (
-                  <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <h2 className="text-2xl font-semibold mb-4">Notes</h2>
-                    <p className="text-gray-700 leading-relaxed">{recipe.notes}</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              // Edit Mode
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-semibold mb-6">Edit Recipe</h2>
-                <form className="space-y-6">
-                  {/* Title */}
-                  <div>
-                    <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                      Recipe Title *
-                    </label>
-                    <input
-                      type="text"
-                      id="title"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Description */}
-                  <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                      Description *
-                    </label>
-              <textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      required
-                      rows="3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Basic Info Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="prepTime" className="block text-sm font-medium text-gray-700 mb-2">
-                        Prep Time *
-                      </label>
-                      <input
-                        type="text"
-                        id="prepTime"
-                        name="prepTime"
-                        value={formData.prepTime}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="cookTime" className="block text-sm font-medium text-gray-700 mb-2">
-                        Cook Time *
-                      </label>
-                      <input
-                        type="text"
-                        id="cookTime"
-                        name="cookTime"
-                        value={formData.cookTime}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="servings" className="block text-sm font-medium text-gray-700 mb-2">
-                        Servings *
-                      </label>
-                      <input
-                        type="number"
-                        id="servings"
-                        name="servings"
-                        value={formData.servings}
-                        onChange={handleChange}
-                        required
-                        min="1"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-2">
-                        Difficulty *
-                      </label>
-                      <select
-                        id="difficulty"
-                        name="difficulty"
-                        value={formData.difficulty}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                      >
-                        <option value="Easy">Easy</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Hard">Hard</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Category Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="mealType" className="block text-sm font-medium text-gray-700 mb-2">
-                        Meal Type *
-                      </label>
-                      <select
-                        id="mealType"
-                        name="mealType"
-                        value={formData.mealType}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                      >
-                        <option value="Breakfast">Breakfast</option>
-                        <option value="Lunch">Lunch</option>
-                        <option value="Dinner">Dinner</option>
-                        <option value="Dessert">Dessert</option>
-                        <option value="Snacks">Snacks</option>
-                        <option value="Beverages">Beverages</option>
-                        <option value="Appetizers">Appetizers</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label htmlFor="cuisine" className="block text-sm font-medium text-gray-700 mb-2">
-                        Cuisine *
-                      </label>
-                      <select
-                        id="cuisine"
-                        name="cuisine"
-                        value={formData.cuisine}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                      >
-                        <option value="Italian">Italian</option>
-                        <option value="Mexican">Mexican</option>
-                        <option value="Chinese">Chinese</option>
-                        <option value="Indian">Indian</option>
-                        <option value="American">American</option>
-                        <option value="Thai">Thai</option>
-                        <option value="Mediterranean">Mediterranean</option>
-                        <option value="Japanese">Japanese</option>
-                        <option value="French">French</option>
-                        <option value="Other">Other</option>
-                      </select>
-          </div>
-                    <div>
-                      <label htmlFor="dishType" className="block text-sm font-medium text-gray-700 mb-2">
-                        Dish Type *
-                      </label>
-                      <select
-                        id="dishType"
-                        name="dishType"
-                        value={formData.dishType}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                      >
-                        <option value="Main Course">Main Course</option>
-                        <option value="Side Dish">Side Dish</option>
-                        <option value="Soup">Soup</option>
-                        <option value="Salad">Salad</option>
-                        <option value="Dessert">Dessert</option>
-                        <option value="Beverage">Beverage</option>
-                        <option value="Appetizer">Appetizer</option>
-                        <option value="Breakfast">Breakfast</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label htmlFor="occasion" className="block text-sm font-medium text-gray-700 mb-2">
-                        Occasion *
-                      </label>
-                      <select
-                        id="occasion"
-                        name="occasion"
-                        value={formData.occasion}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                      >
-                        <option value="Everyday">Everyday</option>
-                        <option value="Weekend">Weekend</option>
-                        <option value="Holiday">Holiday</option>
-                        <option value="Party">Party</option>
-                        <option value="Special Occasion">Special Occasion</option>
-                        <option value="Quick Meal">Quick Meal</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Ingredients */}
-                  <div>
-                    <label htmlFor="ingredients" className="block text-sm font-medium text-gray-700 mb-2">
-                      Ingredients * (one per line)
-                    </label>
-                    <textarea
-                      id="ingredients"
-                      name="ingredients"
-                      value={formData.ingredients}
-                      onChange={handleChange}
-                      required
-                      rows="6"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Instructions */}
-                  <div>
-                    <label htmlFor="instructions" className="block text-sm font-medium text-gray-700 mb-2">
-                      Instructions * (one step per line)
-                    </label>
-                    <textarea
-                      id="instructions"
-                      name="instructions"
-                      value={formData.instructions}
-                      onChange={handleChange}
-                      required
-                      rows="8"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Image */}
-                  <div>
-                    <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
-                      Recipe Image *
-                    </label>
-                    <textarea
-                      id="image"
-                      name="image"
-                      value={formData.image}
-                      onChange={handleChange}
-                      required
-                      rows="4"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Notes */}
-                  <div>
-                    <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                      Additional Notes (Optional)
-                    </label>
-                    <textarea
-                      id="notes"
-                      name="notes"
-                      value={formData.notes}
-                      onChange={handleChange}
-                      rows="4"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent"
-                    />
-                  </div>
-                </form>
-                </div>
+              </form>
             )}
           </div>
-        </div>
+              </div>
 
-        {noChangesMessage && (
-          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
-            {noChangesMessage}
+        {/* User's Recipes */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-800">My Recipes</h3>
+              <button
+                onClick={handleAddRecipe}
+                className="bg-primary-accent hover:bg-primary-accent/90 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+              >
+                Add New Recipe
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-accent mx-auto mb-4"></div>
+                <p>Loading your recipes...</p>
           </div>
-        )}
+            ) : userRecipes.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {userRecipes.map(recipe => (
+                  <RecipeCard key={recipe._id} recipe={recipe} />
+              ))}
+            </div>
+          ) : (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🍽️</div>
+                <h3 className="text-2xl font-semibold text-gray-700 mb-2">No recipes yet</h3>
+                <p className="text-gray-500 mb-6">Start sharing your culinary creations!</p>
+                <button
+                  onClick={handleAddRecipe}
+                  className="bg-primary-accent hover:bg-primary-accent/90 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200"
+                >
+                  Add Your First Recipe
+                </button>
+            </div>
+          )}
+          </div>
+        </div>
       </div>
     </div>
   );
-}
+};
 
-export default RecipeDetailPage;
+export default UserProfilePage;
