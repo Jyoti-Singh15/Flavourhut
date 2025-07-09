@@ -1,4 +1,5 @@
 // src/config/config.js
+console.log('API_BASE_URL:', config.API_BASE_URL);
 const config = {
   // API Base URL - changes based on environment
   API_BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
