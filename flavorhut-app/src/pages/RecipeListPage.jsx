@@ -5,6 +5,7 @@ import CategoryFilter from '../components/CategoryFilter';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import BackButton from '../components/BackButton';
+import { recipeAPI } from '../services/api';
 
 function RecipeListPage() {
   const [recipes, setRecipes] = useState([]);
@@ -29,7 +30,7 @@ function RecipeListPage() {
   const fetchRecipes = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/recipes');
+      const response = await recipeAPI.getAll();
       setRecipes(response.data);
       setError('');
     } catch (err) {
