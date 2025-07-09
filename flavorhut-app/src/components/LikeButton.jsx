@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { recipeAPI } from '../services/api';
 
 const LikeButton = ({ recipeId, initialLikes = 0, initialIsLiked = false, onLikeChange }) => {
   const { user, isAuthenticated } = useAuth();
@@ -21,7 +22,7 @@ const LikeButton = ({ recipeId, initialLikes = 0, initialIsLiked = false, onLike
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
-      const response = await axios.get(`http://localhost:5000/api/recipes/${recipeId}/like-status`, { headers });
+      const response = await recipeAPI.getLikeStatus(recipeId);
       setLikes(response.data.likes);
       setIsLiked(response.data.isLiked);
     } catch (error) {
@@ -43,7 +44,7 @@ const LikeButton = ({ recipeId, initialLikes = 0, initialIsLiked = false, onLike
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
-      const response = await axios.post(`http://localhost:5000/api/recipes/${recipeId}/like`, {}, { headers });
+      const response = await recipeAPI.like(recipeId);
 
       setLikes(response.data.likes);
       setIsLiked(response.data.isLiked);
