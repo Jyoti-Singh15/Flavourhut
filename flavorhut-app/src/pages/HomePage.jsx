@@ -5,6 +5,7 @@ import RecipeCard from '../components/RecipeCard';
 import SearchBar from '../components/SearchBar';
 import CategoryFilter from '../components/CategoryFilter';
 import axios from 'axios';
+import { recipeAPI } from '../services/api';
 
 const heroImage = 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80';
 
@@ -92,7 +93,7 @@ const HomePage = () => {
   const fetchRecipes = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/recipes');
+      const response = await recipeAPI.getAll();
       setRecipes(response.data);
       setError(null);
     } catch (err) {
