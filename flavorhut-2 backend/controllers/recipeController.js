@@ -70,12 +70,23 @@ exports.getRecipesByUser = async (req, res) => {
 // @access  Private (requires authentication)
 exports.addRecipe = async (req, res) => {
   try {
-    const {
+    let {
       title, description, image,
       prepTime, cookTime, servings, difficulty,
       mealType, cuisine, dietaryNeeds, dishType, occasion,
       ingredients, instructions, notes
     } = req.body;
+
+    // Parse JSON fields if sent as strings (from multipart/form-data)
+    if (typeof ingredients === 'string') ingredients = JSON.parse(ingredients);
+    if (typeof instructions === 'string') instructions = JSON.parse(instructions);
+    if (typeof dietaryNeeds === 'string') dietaryNeeds = JSON.parse(dietaryNeeds);
+
+    // If an image file is uploaded, convert to base64 and set image field
+    if (req.file) {
+      const base64Image = req.file.buffer.toString('base64');
+      image = `data:${req.file.mimetype};base64,${base64Image}`;
+    }
 
     // Use authenticated user's ID
     const userId = req.user._id;
