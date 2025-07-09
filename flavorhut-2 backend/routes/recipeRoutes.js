@@ -12,6 +12,7 @@ const {
   getLikeStatus
 } = require('../controllers/recipeController');
 const { protect } = require('../middleware/authMiddleware'); // Import protect middleware
+const { upload } = require('../utils/imageUpload');
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.post('/:id/like', protect, likeRecipe); // POST /api/recipes/:id/like
 router.get('/:id/like-status', protect, getLikeStatus); // GET /api/recipes/:id/like-status
 
 // Protected routes
-router.post('/', protect, addRecipe); // POST /api/recipes
+router.post('/', protect, upload.single('image'), addRecipe); // POST /api/recipes
 
 router.route('/:id')
   .put(protect, updateRecipe)     // PUT /api/recipes/:id
