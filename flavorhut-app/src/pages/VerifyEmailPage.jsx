@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
+import config from '../config/config';
 
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const VerifyEmailPage = () => {
     setError('');
     setMessage('');
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/verify', { email, code });
+      const response = await axios.post(`${config.API_BASE_URL}/auth/verify`, { email, code });
       setMessage(response.data.message);
       setTimeout(() => {
         navigate('/login');
