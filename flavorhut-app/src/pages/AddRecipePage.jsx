@@ -40,6 +40,7 @@ const AddRecipePage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [imageFile, setImageFile] = useState(null);
 
   // Word count for description
   const descriptionWordCount = formData.description.trim() ? formData.description.trim().split(/\s+/).length : 0;
@@ -52,24 +53,13 @@ const AddRecipePage = () => {
     }));
   };
 
-  const handleImageChange = async (e) => {
+  const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      try {
-        // Create FormData for file upload
-        const formData = new FormData();
-        formData.append('image', file);
-
-        const token = localStorage.getItem('token');
-        const response = await imageAPI.uploadRecipe(formData);
-
-        const image = response.data.image;
-        setImagePreview(image);
-        setFormData(prev => ({ ...prev, image: image }));
-      } catch (error) {
-        console.error('Error uploading image:', error);
-        setError('Failed to upload image. Please try again.');
-      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      // Do not upload immediately, just store file
+      setFormData(prev => ({ ...prev, image: '' })); // Clear image field, will be set on submit
     }
   };
 
@@ -112,28 +102,35 @@ const AddRecipePage = () => {
     }
 
     try {
-      // Convert ingredients and instructions to the correct format for the schema
-      const recipeData = {
-        ...formData,
-        ingredients: formData.ingredients.split('\n')
-          .filter(item => item.trim())
-          .map(item => ({ item: item.trim() })),
-        instructions: formData.instructions.split('\n')
-          .filter(step => step.trim())
-          .map((step, index) => ({ step: step.trim() }))
-      };
+      // Prepare FormData for multipart/form-data
+      const form = new FormData();
+      form.append('title', formData.title);
+      form.append('description', formData.description);
+      form.append('prepTime', formData.prepTime);
+      form.append('cookTime', formData.cookTime);
+      form.append('servings', formData.servings);
+      form.append('difficulty', formData.difficulty);
+      form.append('mealType', formData.mealType);
+      form.append('cuisine', formData.cuisine);
+      form.append('dishType', formData.dishType);
+      form.append('occasion', formData.occasion);
+      form.append('notes', formData.notes);
+      form.append('dietaryNeeds', JSON.stringify(formData.dietaryNeeds));
+      // Ingredients and instructions as JSON
+      form.append('ingredients', JSON.stringify(formData.ingredients.split('\n').filter(item => item.trim()).map(item => ({ item: item.trim() }))));
+      form.append('instructions', JSON.stringify(formData.instructions.split('\n').filter(step => step.trim()).map(step => ({ step: step.trim() }))));
+      if (imageFile) {
+        form.append('image', imageFile);
+      }
 
       const token = localStorage.getItem('token');
-      console.log('Token:', token); // Debug log
-      console.log('Recipe data:', recipeData); // Debug log
-      
-      const response = await recipeAPI.create(recipeData);
+      // Use recipeAPI.create, but override headers for multipart
+      const response = await recipeAPI.create(form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
 
-      console.log('Recipe added successfully:', response.data);
       navigate('/recipes');
     } catch (err) {
-      console.error('Error adding recipe:', err);
-      console.error('Error response:', err.response); // Debug log
       setError(err.response?.data?.message || 'Failed to add recipe. Please try again.');
     } finally {
       setLoading(false);
