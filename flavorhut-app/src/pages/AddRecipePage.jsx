@@ -69,7 +69,7 @@ const AddRecipePage = () => {
     if (!formData.title.trim()) errors.title = 'Title is required.';
     if (!formData.description.trim()) errors.description = 'Description is required.';
     else if (formData.description.trim().split(/\s+/).length > 500) errors.description = 'Description cannot exceed 500 words.';
-    if (!formData.image) errors.image = 'Image is required.';
+    if (!imageFile && !formData.image) errors.image = 'Image is required.';
     if (!formData.mealType) errors.mealType = 'Meal type is required.';
     if (!formData.difficulty) errors.difficulty = 'Difficulty is required.';
     if (!formData.prepTime.trim()) errors.prepTime = 'Preparation time is required.';
@@ -120,10 +120,14 @@ const AddRecipePage = () => {
       form.append('ingredients', JSON.stringify(formData.ingredients.split('\n').filter(item => item.trim()).map(item => ({ item: item.trim() }))));
       form.append('instructions', JSON.stringify(formData.instructions.split('\n').filter(step => step.trim()).map(step => ({ step: step.trim() }))));
       if (imageFile) {
+        console.log('Appending image file:', imageFile.name, 'Size:', imageFile.size, 'Type:', imageFile.type);
         form.append('image', imageFile);
+      } else {
+        console.log('No image file to append');
       }
 
       const token = localStorage.getItem('token');
+      console.log('Sending FormData with fields:', Array.from(form.keys()));
       // Use recipeAPI.create, but override headers for multipart
       const response = await recipeAPI.create(form, {
         headers: { 'Content-Type': 'multipart/form-data' }
