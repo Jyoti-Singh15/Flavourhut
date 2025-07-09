@@ -23,9 +23,7 @@ app.use(passport.session());
 
 // CORS Configuration
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL, 'https://yourdomain.com'] // Add your production frontend URL
-    : ['http://localhost:5173', 'http://localhost:3000'],
+  origin: ['https://flavourhut.vercel.app'],
   credentials: true,
   optionsSuccessStatus: 200
 };
