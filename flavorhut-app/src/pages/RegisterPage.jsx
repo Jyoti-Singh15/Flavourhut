@@ -4,6 +4,7 @@ import Button from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import googleLogo from '../assets/Google__G__logo.svg.webp';
+import config from '../config/config';
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -132,7 +133,7 @@ function RegisterPage() {
           <div className="flex-grow border-t border-gray-300"></div>
         </div>
         <button
-          onClick={() => window.location.href = 'http://localhost:5000/api/auth/google'}
+          onClick={() => window.location.href = `${config.API_BASE_URL}/auth/google`}
           className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-800 py-3 rounded-2xl font-semibold text-lg shadow-sm hover:bg-gray-50 transition"
         >
           <img src={googleLogo} alt="Google logo" className="w-6 h-6" />
