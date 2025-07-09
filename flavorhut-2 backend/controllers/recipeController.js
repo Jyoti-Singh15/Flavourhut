@@ -84,15 +84,18 @@ exports.addRecipe = async (req, res) => {
 
     // If an image file is uploaded, convert to base64 and set image field
     if (req.file) {
+      console.log('Image file received:', req.file.originalname, 'Size:', req.file.size, 'Mime type:', req.file.mimetype);
       const base64Image = req.file.buffer.toString('base64');
       image = `data:${req.file.mimetype};base64,${base64Image}`;
+    } else {
+      console.log('No image file received in request');
     }
 
     // Use authenticated user's ID
     const userId = req.user._id;
 
-    // Basic validation
-    if (!title || !description || !image || !prepTime || !cookTime || !servings || !difficulty || !mealType || !cuisine || !dishType || !occasion || !ingredients || ingredients.length === 0 || !instructions || instructions.length === 0) {
+    // Basic validation - check for image file or existing image URL
+    if (!title || !description || (!image && !req.file) || !prepTime || !cookTime || !servings || !difficulty || !mealType || !cuisine || !dishType || !occasion || !ingredients || ingredients.length === 0 || !instructions || instructions.length === 0) {
       return res.status(400).json({ message: 'Please enter all required fields for the recipe.' });
     }
 
