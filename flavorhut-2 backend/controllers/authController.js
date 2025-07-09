@@ -90,6 +90,11 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
 
+    // Check if user is verified
+    if (!user.isVerified) {
+      return res.status(401).json({ message: 'Please verify your email before logging in.' });
+    }
+
     // Login successful
     res.json({
       _id: user._id,
