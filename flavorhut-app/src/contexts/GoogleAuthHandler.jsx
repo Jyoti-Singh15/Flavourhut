@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import config from '../config/config';
 
 const GoogleAuthHandler = () => {
   const { updateUser } = useAuth();
@@ -8,7 +9,7 @@ const GoogleAuthHandler = () => {
     const token = urlParams.get('token');
     if (token) {
       localStorage.setItem('token', token);
-      fetch('http://localhost:5000/api/auth/profile', {
+      fetch(`${config.API_BASE_URL}/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => res.json())
