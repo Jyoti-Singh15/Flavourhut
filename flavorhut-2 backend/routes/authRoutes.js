@@ -32,9 +32,9 @@ router.get('/google/callback',
     // Successful authentication, redirect to frontend with JWT token
     const token = req.user && req.user._jwt;
     if (token) {
-      res.redirect(`http://localhost:5173?token=${token}`); // Change to your frontend URL in production
+      res.redirect(`${process.env.FRONTEND_URL}?token=${token}`); // Use frontend URL from env
     } else {
-      res.redirect('http://localhost:5173/login?error=auth');
+      res.redirect(`${process.env.FRONTEND_URL}/login?error=auth`);
     }
   }
 );
