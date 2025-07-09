@@ -32,7 +32,7 @@ router.get('/google/callback',
     // Successful authentication, redirect to frontend with JWT token
     const token = req.user && req.user._jwt;
     if (token) {
-      res.redirect(`${process.env.FRONTEND_URL}?token=${token}`); /
+      res.redirect(`${process.env.FRONTEND_URL}?token=${token}`); 
     } else {
       res.redirect(`${process.env.FRONTEND_URL}/login?error=auth`);
     }
