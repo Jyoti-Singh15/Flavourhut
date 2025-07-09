@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import Button from '../components/Button'; // Reusable Button component
 import BackButton from '../components/BackButton';
+import { imageAPI, recipeAPI } from '../services/api';
 
 // Define simplified category options for dropdowns in the add recipe form
 // These align with the main groups from CategoryFilter.jsx
@@ -59,12 +60,7 @@ const AddRecipePage = () => {
         formData.append('image', file);
 
         const token = localStorage.getItem('token');
-        const response = await axios.post('http://localhost:5000/api/images/recipe', formData, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+        const response = await imageAPI.uploadRecipe(formData);
 
         const image = response.data.image;
         setImagePreview(image);
@@ -97,12 +93,7 @@ const AddRecipePage = () => {
       console.log('Token:', token); // Debug log
       console.log('Recipe data:', recipeData); // Debug log
       
-      const response = await axios.post('http://localhost:5000/api/recipes', recipeData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await recipeAPI.create(recipeData);
 
       console.log('Recipe added successfully:', response.data);
       navigate('/recipes');
