@@ -1,18 +1,18 @@
-// flavorhut-backend/models/Recipe.js
+
 const mongoose = require('mongoose');
 
 const IngredientSchema = new mongoose.Schema({
   item: { type: String, required: true }
-}, { _id: false }); // Don't create _id for sub-documents if not needed
+}, { _id: false }); 
 
 const InstructionSchema = new mongoose.Schema({
   step: { type: String, required: true }
-}, { _id: false }); // Don't create _id for sub-documents if not needed
+}, { _id: false }); 
 
 const RecipeSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Reference to a User model (we'll make this later)
+    ref: 'User',
     required: true,
   },
   title: {
@@ -27,7 +27,7 @@ const RecipeSchema = new mongoose.Schema({
     validate: {
       validator: function(v) {
         if (!v) return false;
-        // Count words by splitting on whitespace
+        
         return v.trim().split(/\s+/).length <= 500;
       },
       message: 'Description cannot be more than 500 words'
@@ -55,7 +55,7 @@ const RecipeSchema = new mongoose.Schema({
     enum: ['Easy', 'Medium', 'Hard'],
     required: true,
   },
-  mealType: { // Simple string for category, can be array or ref to category model later
+  mealType: { 
     type: String,
     required: true
   },
@@ -63,7 +63,7 @@ const RecipeSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  dietaryNeeds: { // Array of strings for multiple selections
+  dietaryNeeds: { 
     type: [String],
     default: []
   },
@@ -76,11 +76,11 @@ const RecipeSchema = new mongoose.Schema({
     required: true
   },
   ingredients: {
-    type: [IngredientSchema], // Embedded array of ingredient objects
+    type: [IngredientSchema], 
     required: [true, 'Please add at least one ingredient']
   },
   instructions: {
-    type: [InstructionSchema], // Embedded array of instruction objects
+    type: [InstructionSchema], 
     required: [true, 'Please add at least one instruction step']
   },
   notes: {
@@ -88,21 +88,21 @@ const RecipeSchema = new mongoose.Schema({
     maxlength: [1000, 'Notes cannot be more than 1000 characters'],
     default: ''
   },
-  averageRating: { // Can be updated via aggregation or separate logic
+  averageRating: { 
     type: Number,
     default: 0,
     min: 0,
     max: 5
   },
-  ratingsCount: { // Keep track of how many ratings
+  ratingsCount: { 
     type: Number,
     default: 0
   },
-  likes: { // Total number of likes
+  likes: { 
     type: Number,
     default: 0
   },
-  likedBy: [{ // Array of user IDs who liked this recipe
+  likedBy: [{ 
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }]
