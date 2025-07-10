@@ -1,10 +1,10 @@
-// flavorhut-backend/app.js
+
 const express = require('express');
 const cors = require('cors');
 const recipeRoutes = require('./routes/recipeRoutes');
-const authRoutes = require('./routes/authRoutes'); // Import auth routes
-const adminRoutes = require('./routes/adminRoutes'); // Import admin routes
-const imageRoutes = require('./routes/imageRoutes'); // Import image routes
+const authRoutes = require('./routes/authRoutes'); 
+const adminRoutes = require('./routes/adminRoutes'); 
+const imageRoutes = require('./routes/imageRoutes'); 
 
 const app = express();
 
@@ -14,7 +14,7 @@ const passport = require('passport');
 require('./config/passport');
 
 app.use(session({
-  secret: 'your_secret_key', // Use a strong secret in production!
+  secret: 'your_secret_key', 
   resave: false,
   saveUninitialized: false,
 }));
@@ -30,14 +30,14 @@ const corsOptions = {
 
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '10mb' })); // Increase limit for image uploads
+app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/images', imageRoutes); // Add image routes
+app.use('/api/images', imageRoutes); 
 
 // Simple root route
 app.get('/', (req, res) => {
