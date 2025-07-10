@@ -83,6 +83,21 @@ function LoginPage() {
             
           </Button>
         </form>
+        <div className="flex items-center my-6">
+          <div className="flex-grow h-px bg-gray-300" />
+          <span className="mx-3 text-gray-400">OR</span>
+          <div className="flex-grow h-px bg-gray-300" />
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
+          }}
+          className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md py-2 px-4 bg-white hover:bg-gray-50 transition-colors shadow-sm"
+        >
+          <img src="/google-tile.webp" alt="Google logo" className="w-6 h-6" />
+          <span className="text-gray-700 font-medium">Sign in with Google</span>
+        </button>
         <p className="text-center text-sm text-gray-600 mt-6">
           Don't have an account? <Link to="/register" className="text-primary-accent hover:underline font-semibold">Register here</Link>
         </p>
