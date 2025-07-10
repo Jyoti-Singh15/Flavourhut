@@ -1,6 +1,6 @@
-// flavorhut-backend/models/User.js
+
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs'); // For password hashing
+const bcrypt = require('bcryptjs'); 
 
 const UserSchema = new mongoose.Schema({
   username: {
@@ -19,11 +19,11 @@ const UserSchema = new mongoose.Schema({
       'Please enter a valid email address',
     ],
   },
-  password: { // This will store the hashed password
+  password: {
     type: String,
-    // required: [true, 'Please add a password'], // Removed required for OAuth users
+    
     minlength: [6, 'Password must be at least 6 characters'],
-    select: false, // Don't return password by default on queries
+    select: false, 
   },
   firstName: {
     type: String,
@@ -37,7 +37,7 @@ const UserSchema = new mongoose.Schema({
   },
   profilePictureUrl: {
     type: String,
-    default: '', // Default is empty, will store base64 string if uploaded
+    default: '', 
   },
   bio: {
     type: String,
@@ -73,12 +73,11 @@ const UserSchema = new mongoose.Schema({
     default: null,
   },
 }, {
-  timestamps: true, // Automatically adds createdAt and updatedAt
+  timestamps: true, 
 });
 
-// Middleware to hash password before saving
 UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) { // Only hash if password field is modified
+  if (!this.isModified('password')) { 
     return next();
   }
   const salt = await bcrypt.genSalt(10);
@@ -86,7 +85,7 @@ UserSchema.pre('save', async function(next) {
   next();
 });
 
-// Method to compare entered password with hashed password in DB
+
 UserSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
