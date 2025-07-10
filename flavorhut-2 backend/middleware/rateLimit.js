@@ -1,9 +1,9 @@
 const rateLimit = require('express-rate-limit');
 
-// General rate limiter
+
 const generalLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, 
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, 
   message: {
     message: 'Too many requests from this IP, please try again later.'
   },
@@ -11,10 +11,10 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Stricter limiter for auth routes
+
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  windowMs: 15 * 60 * 1000, 
+  max: 5, 
   message: {
     message: 'Too many authentication attempts, please try again later.'
   },
@@ -22,10 +22,10 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Image upload limiter
+
 const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // limit each IP to 10 uploads per hour
+  windowMs: 60 * 60 * 1000, 
+  max: 10, 
   message: {
     message: 'Too many image uploads, please try again later.'
   },
