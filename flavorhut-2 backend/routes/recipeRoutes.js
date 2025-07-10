@@ -1,4 +1,4 @@
-// flavorhut-backend/routes/recipeRoutes.js
+
 const express = require('express');
 const { 
   getRecipes, 
@@ -11,30 +11,30 @@ const {
   likeRecipe,
   getLikeStatus
 } = require('../controllers/recipeController');
-const { protect } = require('../middleware/authMiddleware'); // Import protect middleware
+const { protect } = require('../middleware/authMiddleware'); 
 const { upload } = require('../utils/imageUpload');
 
 const router = express.Router();
 
 // Public routes
 router.route('/')
-  .get(getRecipes); // GET /api/recipes (with optional query params)
+  .get(getRecipes); 
 
 router.route('/:id')
-  .get(getRecipeById); // GET /api/recipes/:id
+  .get(getRecipeById); 
 
-router.get('/user/:userId', getRecipesByUser); // GET /api/recipes/user/:userId
+router.get('/user/:userId', getRecipesByUser); 
 
 // Protected rating and like routes
-router.post('/:id/rate', protect, rateRecipe); // POST /api/recipes/:id/rate
-router.post('/:id/like', protect, likeRecipe); // POST /api/recipes/:id/like
-router.get('/:id/like-status', protect, getLikeStatus); // GET /api/recipes/:id/like-status
+router.post('/:id/rate', protect, rateRecipe); 
+router.post('/:id/like', protect, likeRecipe); 
+router.get('/:id/like-status', protect, getLikeStatus); 
 
 // Protected routes
-router.post('/', protect, upload.single('image'), addRecipe); // POST /api/recipes
+router.post('/', protect, upload.single('image'), addRecipe); 
 
 router.route('/:id')
-  .put(protect, updateRecipe)     // PUT /api/recipes/:id
-  .delete(protect, deleteRecipe); // DELETE /api/recipes/:id
+  .put(protect, updateRecipe)     
+  .delete(protect, deleteRecipe); 
 
 module.exports = router;
