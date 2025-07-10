@@ -4,7 +4,7 @@ import StarRating from './StarRating';
 import LikeButton from './LikeButton';
 
 function RecipeCard({ recipe }) {
-  const recipeUrl = `/recipes/${recipe._id}`; // Use MongoDB _id
+  const recipeUrl = `/recipes/${recipe._id}`; 
 
   return (
     <Link to={recipeUrl} className="block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden group">
@@ -18,7 +18,7 @@ function RecipeCard({ recipe }) {
           recipeId={recipe._id} 
           initialLikes={recipe.likes || 0}
           onLikeChange={(likes, isLiked) => {
-            // Update the recipe object if needed
+          
             recipe.likes = likes;
           }}
         />
