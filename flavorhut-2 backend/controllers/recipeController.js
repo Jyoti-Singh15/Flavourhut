@@ -1,14 +1,11 @@
-// flavorhut-backend/controllers/recipeController.js
+
 const Recipe = require('../models/Recipe');
 
-// @desc    Get all recipes
-// @route   GET /api/recipes
-// @access  Public
 exports.getRecipes = async (req, res) => {
   try {
     const { search, category, cuisine, difficulty, mealType } = req.query;
     
-    // Build filter object
+    
     let filter = {};
     
     if (search) {
@@ -31,9 +28,6 @@ exports.getRecipes = async (req, res) => {
   }
 };
 
-// @desc    Get single recipe by ID
-// @route   GET /api/recipes/:id
-// @access  Public
 exports.getRecipeById = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id).populate('userId', 'username profilePictureUrl');
@@ -52,9 +46,6 @@ exports.getRecipeById = async (req, res) => {
   }
 };
 
-// @desc    Get recipes by user ID
-// @route   GET /api/recipes/user/:userId
-// @access  Public
 exports.getRecipesByUser = async (req, res) => {
   try {
     const recipes = await Recipe.find({ userId: req.params.userId }).populate('userId', 'username profilePictureUrl');
@@ -65,9 +56,6 @@ exports.getRecipesByUser = async (req, res) => {
   }
 };
 
-// @desc    Add a new recipe
-// @route   POST /api/recipes
-// @access  Private (requires authentication)
 exports.addRecipe = async (req, res) => {
   try {
     let {
@@ -77,12 +65,12 @@ exports.addRecipe = async (req, res) => {
       ingredients, instructions, notes
     } = req.body;
 
-    // Parse JSON fields if sent as strings (from multipart/form-data)
+    
     if (typeof ingredients === 'string') ingredients = JSON.parse(ingredients);
     if (typeof instructions === 'string') instructions = JSON.parse(instructions);
     if (typeof dietaryNeeds === 'string') dietaryNeeds = JSON.parse(dietaryNeeds);
 
-    // If an image file is uploaded, convert to base64 and set image field
+    
     if (req.file) {
       console.log('Image file received:', req.file.originalname, 'Size:', req.file.size, 'Mime type:', req.file.mimetype);
       const base64Image = req.file.buffer.toString('base64');
@@ -91,10 +79,10 @@ exports.addRecipe = async (req, res) => {
       console.log('No image file received in request');
     }
 
-    // Use authenticated user's ID
+    
     const userId = req.user._id;
 
-    // Basic validation - check for image file or existing image URL
+    
     if (!title || !description || (!image && !req.file) || !prepTime || !cookTime || !servings || !difficulty || !mealType || !cuisine || !dishType || !occasion || !ingredients || ingredients.length === 0 || !instructions || instructions.length === 0) {
       return res.status(400).json({ message: 'Please enter all required fields for the recipe.' });
     }
@@ -119,10 +107,10 @@ exports.addRecipe = async (req, res) => {
     });
 
     const createdRecipe = await newRecipe.save();
-    res.status(201).json(createdRecipe); // 201 Created
+    res.status(201).json(createdRecipe); 
   } catch (error) {
     console.error(error);
-    // Handle Mongoose validation errors
+    
     if (error.name === 'ValidationError') {
         const messages = Object.values(error.errors).map(val => val.message);
         return res.status(400).json({ message: messages.join(', ') });
@@ -131,9 +119,6 @@ exports.addRecipe = async (req, res) => {
   }
 };
 
-// @desc    Update a recipe
-// @route   PUT /api/recipes/:id
-// @access  Private (recipe owner only)
 exports.updateRecipe = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
@@ -142,7 +127,7 @@ exports.updateRecipe = async (req, res) => {
       return res.status(404).json({ message: 'Recipe not found' });
     }
 
-    // Check if user owns the recipe
+  
     if (recipe.userId.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized to update this recipe' });
     }
@@ -163,9 +148,7 @@ exports.updateRecipe = async (req, res) => {
   }
 };
 
-// @desc    Delete a recipe
-// @route   DELETE /api/recipes/:id
-// @access  Private (recipe owner or admin)
+
 exports.deleteRecipe = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
@@ -174,7 +157,7 @@ exports.deleteRecipe = async (req, res) => {
       return res.status(404).json({ message: 'Recipe not found' });
     }
 
-    // Check if user owns the recipe OR is an admin
+   
     if (recipe.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(401).json({ message: 'Not authorized to delete this recipe' });
     }
@@ -190,9 +173,6 @@ exports.deleteRecipe = async (req, res) => {
   }
 };
 
-// @desc    Rate a recipe
-// @route   POST /api/recipes/:id/rate
-// @access  Private
 exports.rateRecipe = async (req, res) => {
   try {
     const { rating } = req.body;
@@ -223,9 +203,7 @@ exports.rateRecipe = async (req, res) => {
   }
 };
 
-// @desc    Like a recipe
-// @route   POST /api/recipes/:id/like
-// @access  Private
+
 exports.likeRecipe = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
@@ -239,11 +217,11 @@ exports.likeRecipe = async (req, res) => {
     const isLiked = recipe.likedBy.includes(userId);
 
     if (isLiked) {
-      // Unlike the recipe
+      
       recipe.likedBy = recipe.likedBy.filter(id => id.toString() !== userId.toString());
       recipe.likes = Math.max(0, recipe.likes - 1);
     } else {
-      // Like the recipe
+      
       recipe.likedBy.push(userId);
       recipe.likes = recipe.likes + 1;
     }
@@ -261,9 +239,7 @@ exports.likeRecipe = async (req, res) => {
   }
 };
 
-// @desc    Get recipe like status
-// @route   GET /api/recipes/:id/like-status
-// @access  Private
+
 exports.getLikeStatus = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
@@ -272,7 +248,7 @@ exports.getLikeStatus = async (req, res) => {
       return res.status(404).json({ message: 'Recipe not found' });
     }
 
-    // User is authenticated (middleware ensures this)
+    
     const userId = req.user._id;
     const isLiked = recipe.likedBy.includes(userId);
     
