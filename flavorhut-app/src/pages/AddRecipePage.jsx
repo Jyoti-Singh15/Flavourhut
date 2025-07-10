@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import Button from '../components/Button'; // Reusable Button component
+import Button from '../components/Button'; 
 import BackButton from '../components/BackButton';
 import { imageAPI, recipeAPI } from '../services/api';
 
-// Define simplified category options for dropdowns in the add recipe form
-// These align with the main groups from CategoryFilter.jsx
+
 const mealTypes = ["Breakfast", "Lunch", "Dinner", "Dessert", "Snacks & Appetizers", "Beverages", "Other"];
 const cuisines = ["Indian", "Italian", "Mexican", "Chinese", "American", "Thai", "Mediterranean", "Japanese", "French", "Other"];
 const dietaryNeeds = ["None", "Vegan", "Gluten-Free", "Keto", "Vegetarian", "Dairy-Free", "Nut-Free"];
@@ -59,7 +58,7 @@ const AddRecipePage = () => {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
       // Do not upload immediately, just store file
-      setFormData(prev => ({ ...prev, image: '' })); // Clear image field, will be set on submit
+      setFormData(prev => ({ ...prev, image: '' })); 
     }
   };
 
@@ -128,7 +127,7 @@ const AddRecipePage = () => {
 
       const token = localStorage.getItem('token');
       console.log('Sending FormData with fields:', Array.from(form.keys()));
-      // Use recipeAPI.create, but override headers for multipart
+      
       const response = await recipeAPI.create(form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -145,7 +144,7 @@ const AddRecipePage = () => {
     navigate(-1);
   };
 
-  // Add this function to fetch and auto-fill from TheMealDB
+  // Add this function to fetch and auto-fill
   const handleAutoFill = async () => {
     if (!formData.title) return;
     try {
