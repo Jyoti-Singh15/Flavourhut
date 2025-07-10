@@ -1,10 +1,9 @@
-/* src/index.css */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* You can add global custom CSS variables here if needed,
-   though Tailwind's config is preferred for colors/fonts */
+
 body {
   font-family: 'Open Sans', sans-serif; /* Fallback */
   color: #555555; /* Default body text color */
