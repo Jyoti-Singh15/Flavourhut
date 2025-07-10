@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Button from '../components/Button';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import config from '../config/config';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -91,7 +92,7 @@ function LoginPage() {
         <button
           type="button"
           onClick={() => {
-            window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
+            window.location.href = `${config.API_BASE_URL}/auth/google`;
           }}
           className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md py-2 px-4 bg-white hover:bg-gray-50 transition-colors shadow-sm"
         >
