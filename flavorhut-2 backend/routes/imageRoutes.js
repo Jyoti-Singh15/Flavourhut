@@ -3,9 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { upload } = require('../utils/imageUpload');
 
-// @desc    Upload profile picture
-// @route   POST /api/images/profile
-// @access  Private
+
 router.post('/profile', protect, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
@@ -34,9 +32,7 @@ router.post('/profile', protect, upload.single('image'), async (req, res) => {
   }
 });
 
-// @desc    Upload recipe image
-// @route   POST /api/images/recipe
-// @access  Private
+
 router.post('/recipe', protect, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
